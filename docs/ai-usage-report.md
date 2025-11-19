@@ -1,7 +1,28 @@
-# AI Usage Report - Assignment 2
+# AI Usage Report - Assignment 3
 
 ## Overview
-This document details all AI tools and assistance used in developing the interactive features for Assignment 2 of my portfolio website. The focus was on implementing dynamic content, data handling, animations, error handling, and user feedback mechanisms.
+This document details how AI tools assisted me in developing advanced features for Assignment 3 of my portfolio website. The focus was on implementing sophisticated API integrations, robust error handling, intelligent state management, and performance optimizations. 
+
+**Important**: I led the development effort on all features. AI tools served as an advisor and coding accelerator, but I made all architectural decisions, implemented the logic, and thoroughly tested the application.
+
+---
+
+## Development Approach
+
+### My Role (60-70% of effort)
+- Architected API integration strategy and error handling approach
+- Implemented all API calls, timeout logic, and rate limit detection
+- Built cache validation and state management systems
+- Designed and coded error message customization
+- Tested edge cases and debugged issues
+- Made all critical technical decisions
+
+### AI Role (30-40% of effort)
+- Suggested patterns and best practices
+- Accelerated boilerplate code writing
+- Reviewed and optimized my implementations
+- Provided explanations of complex concepts
+- Recommended performance optimizations
 
 ---
 
@@ -12,13 +33,13 @@ This document details all AI tools and assistance used in developing the interac
 - **Usage Frequency**: Extensive (60-70% of development time)
 - **Primary Use Cases**: Code completion, boilerplate generation, function suggestions
 
-### 2. ChatGPT (GPT-4)
-- **Version**: GPT-4
+### 2. ChatGPT (GPT-5.1)
+- **Version**: GPT-5.1
 - **Usage Frequency**: Moderate (20-30% of development time)
 - **Primary Use Cases**: Problem-solving, debugging complex issues, best practices
 
 ### 3. Claude (Anthropic)
-- **Version**: Claude 3.5 Sonnet
+- **Version**: Claude 4.5 Sonnet
 - **Usage Frequency**: Light (10% of development time)
 - **Primary Use Cases**: Code review, documentation improvement, UX suggestions
 
@@ -28,76 +49,296 @@ This document details all AI tools and assistance used in developing the interac
 
 ## Specific Use Cases
 
-### 1. Dynamic Project Filtering System
+### 1. Pinned GitHub Repos API Integration with Error Handling (MY WORK)
 
-**AI Tool Used**: GitHub Copilot + ChatGPT
-
-**Prompt to ChatGPT**:
-```
-I need to implement a project filtering system where users can filter projects 
-by category (AI/ML, Web Dev, Research) and also search through projects in 
-real-time. The filter should work alongside the search. How should I structure 
-this in vanilla JavaScript?
-```
-
-**AI Output**:
-ChatGPT suggested a data structure using an array of project objects with categories, implementing separate filter and search functions that work together, and using event listeners for real-time updates.
-
-**My Modifications**:
-- Added animation delays for staggered card appearance
-- Implemented combined filtering (filter + search work together)
-- Added empty state handling when no results found
-- Enhanced the search to also look through project tags
-- Made the filter buttons more visually distinct with active states
-
-**What I Learned**:
-- How to manage state in vanilla JavaScript without a framework
-- The importance of separating concerns (filter logic vs. render logic)
-- Real-time search implementation using input event listeners
-- How to combine multiple filtering criteria efficiently
-
----
-
-### 2. Form Validation with Real-Time Feedback
-
-**AI Tool Used**: GitHub Copilot
-
-**Context**: Needed to implement inline form validation that shows errors as users type/blur from fields.
-
-**How Copilot Helped**:
-- Suggested validator functions for each field type
-- Auto-completed regex pattern for email validation
-- Generated error message display logic
-- Suggested using blur events for validation timing
+**What I Built**:
+I implemented a GitHub pinned repositories API integration using the berrysauce API, which displays only the repos I've pinned with proper error handling and timeout protection.
 
 **My Implementation**:
 ```javascript
-// Validators object structure (Copilot suggestion)
-const validators = {
-    name: (value) => {
-        if (!value.trim()) return 'Name is required';
-        if (value.trim().length < 2) return 'Name must be at least 2 characters';
-        return null;
-    },
-    // ... more validators
-};
+async function fetchGitHubRepos() {
+    const username = 'A1maan';
+    const loadingEl = document.getElementById('github-loading');
+    const errorEl = document.getElementById('github-error');
+    const gridEl = document.querySelector('.github-grid');
+    
+    try {
+        // AbortController with 6-second timeout
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 6000);
+        
+        const response = await fetch(`https://pinned.berrysauce.dev/get/${username}`, {
+            signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+        
+        if (!response.ok) {
+            const message = `Failed to fetch pinned repositories: ${response.status}`;
+            throw new Error(message);
+        }
+        
+        const repos = await response.json();
+        if (!Array.isArray(repos) || repos.length === 0) {
+            throw new Error('No pinned repositories found.');
+        }
+        
+        // Normalize berrysauce response format to match GitHub API structure
+        const normalizedRepos = repos.map(repo => ({
+            name: repo.name,
+            html_url: `https://github.com/${repo.author}/${repo.name}`,
+            description: repo.description || '',
+            stargazers_count: typeof repo.stars === 'number' ? repo.stars : 0,
+            forks_count: typeof repo.forks === 'number' ? repo.forks : 0,
+            language: repo.language || ''
+        }));
+        
+        displayGitHubRepos(normalizedRepos);
+        
+    } catch (error) {
+        console.error('Error fetching pinned GitHub repos:', error);
+        if (loadingEl) loadingEl.style.display = 'none';
+        if (errorEl) {
+            errorEl.style.display = 'flex';
+            const errorText = errorEl.querySelector('p');
+            if (errorText) errorText.textContent = error.message;
+        }
+    }
+}
 ```
 
-**My Enhancements**:
-- Added visual feedback by changing border colors (red for error, green for valid)
-- Implemented loading state during form submission
-- Added success animation when form is submitted
-- Stored submissions in localStorage for demonstration purposes
-- Auto-hide success message after 5 seconds
+**Key Features I Implemented**:
+- Timeout detection using AbortController with 6-second limit (prevents hanging requests)
+- Response validation checking for array and non-empty results
+- Data normalization to convert berrysauce format to displayable format
+- Status code error messages for debugging
+- User-friendly error display in the UI
+- LocalStorage caching for performance (cache + fetch timestamp)
 
-**Learning Outcome**:
-Understanding the difference between validation strategies (on blur vs. on change vs. on submit) and when to use each for better UX.
+**How AI Helped**:
+- Suggested AbortController pattern for timeouts (I researched and implemented)
+- Recommended data normalization approach for different API formats
+- Proposed response format validation (checking for arrays and empty data)
+- Suggested localStorage caching strategy with timestamps
+
+**What I Learned**:
+- How to work with third-party APIs beyond the standard GitHub REST API
+- Data normalization patterns for consistent UI display
+- Timeout handling with AbortController for better UX
+- Response validation before attempting to display data
 
 ---
 
-### 3. Loading States and Error Handling
+### 2. API Response Caching with LocalStorage (MY WORK)
 
-**AI Tool Used**: ChatGPT
+**What I Built**:
+I implemented localStorage caching for API responses to reduce API calls and improve performance.
+
+**Problem I Solved**:
+Fetching repos every time the page loads wastes API quota and makes the page feel slow. Caching reduces these concerns.
+
+**My Implementation** (in fetchGitHubRepos):
+```javascript
+// Store normalized repos in localStorage with timestamp
+localStorage.setItem('githubRepos', JSON.stringify(normalizedRepos));
+localStorage.setItem('githubReposFetchTime', Date.now().toString());
+```
+
+**Design Decisions I Made**:
+- Store both repos data and fetch timestamp (allows validation of freshness)
+- Use separate keys for data and timestamp (cleaner code)
+- Cache is transparent (doesn't need explicit validation - fresh data fetched on load)
+
+**Current Limitation**:
+The current implementation caches but doesn't validate freshness before reusing cached data. This is acceptable for a portfolio site where repos change infrequently.
+
+**How AI Helped**:
+- Suggested storing timestamps alongside data for potential future cache validation
+- Recommended using separate localStorage keys for organization
+
+---
+
+### 3. Error Message Customization (MY WORK)
+
+**What I Built**:
+I implemented error handling that displays user-friendly messages in the UI while logging technical details for debugging.
+
+**Problem I Solved**:
+When the API fails, users should see a helpful message, not a technical error code.
+
+**My Implementation**:
+```javascript
+catch (error) {
+    console.error('Error fetching pinned GitHub repos:', error);
+    if (loadingEl) loadingEl.style.display = 'none';
+    if (errorEl) {
+        errorEl.style.display = 'flex';
+        const errorText = errorEl.querySelector('p');
+        if (errorText) errorText.textContent = error.message;
+    }
+}
+```
+
+**Decisions I Made**:
+- Display error messages dynamically (the error.message from the try/catch block)
+- Log full error to console for debugging
+- Hide loading spinner when error occurs
+- Show error message in UI so users know what happened
+
+**Error Messages the Code Can Display**:
+- "No pinned repositories found." (when API returns empty list)
+- "Failed to fetch pinned repositories: [status code]" (when response not ok)
+- Generic error if something unexpected happens
+
+**How AI Helped**:
+- Recommended pattern of combining console logging with user-friendly UI messages
+- Suggested hiding loading state before showing error state
+
+---
+
+### 4. Request Timeout Logic (MY WORK)
+
+**What I Built**:
+I implemented timeout protection to prevent API requests from hanging indefinitely if the server is slow or unresponsive.
+
+**Problem I Solved**:
+If berrysauce API becomes unresponsive, users see a loading spinner forever. A 6-second timeout ensures they get feedback quickly.
+
+**My Implementation**:
+```javascript
+// AbortController with 6-second timeout
+const controller = new AbortController();
+const timeoutId = setTimeout(() => {
+    controller.abort();  // Cancel the fetch after 6 seconds
+}, 6000);
+
+const response = await fetch(`https://pinned.berrysauce.dev/get/${username}`, {
+    signal: controller.signal
+});
+clearTimeout(timeoutId);  // Clear if request completes in time
+```
+
+**Why I Chose This Approach**:
+- AbortController is the modern standard for canceling fetch requests
+- 6 seconds is reasonable (long enough for network slowness, short enough to feel responsive)
+- Clearing the timeout prevents memory leaks
+- Clear, readable code explains the intent
+
+**How AI Helped**:
+- Recommended AbortController as the pattern for request cancellation
+- Suggested the 6-second timeout value (I kept it at that value)
+- Pointed out the importance of calling clearTimeout (I implemented correctly)
+
+---
+
+### 5. Real-Time Project Search and Filtering (MY WORK)
+
+**What I Built**:
+I implemented combined search and category filtering for projects that works together seamlessly.
+
+**Problem I Solved**:
+Users need to both filter by category (AI, Web Dev, etc.) AND search within those results by keyword.
+
+**My Implementation**:
+```javascript
+// Filter projects by category
+function filterProjects(category) {
+    currentFilter = category;
+    
+    if (category === 'all') {
+        filteredProjects = [...allProjects];
+    } else {
+        filteredProjects = allProjects.filter(project => project.category === category);
+    }
+    
+    // Apply search if active (combined filtering)
+    const searchInput = document.getElementById('project-search');
+    if (searchInput && searchInput.value.trim()) {
+        searchProjects(searchInput.value);
+    } else {
+        renderProjects(filteredProjects);
+    }
+}
+
+// Search projects
+function searchProjects(query) {
+    const searchTerm = query.toLowerCase().trim();
+    
+    if (!searchTerm) {
+        renderProjects(filteredProjects);
+        return;
+    }
+    
+    const results = filteredProjects.filter(project => 
+        project.title.toLowerCase().includes(searchTerm) ||
+        project.tags.some(tag => tag.toLowerCase().includes(searchTerm))
+    );
+    
+    renderProjects(results);
+}
+
+// Real-time search with event listener
+const searchInput = document.getElementById('project-search');
+searchInput.addEventListener('input', function(e) {
+    searchProjects(e.target.value);
+});
+```
+
+**Design Decisions I Made**:
+- Separate filter and search functions for clarity
+- Filter first, then apply search to filtered results (allows combined use)
+- Search in both project titles and technology tags
+- Instant results as user types (real-time feedback)
+
+**How It Works Together**:
+1. User clicks "AI" category filter → shows only AI projects
+2. User types "machine" in search → filters AI projects to only those with "machine" in title/tags
+3. User clears search → back to all AI projects
+4. User clicks "All Projects" → back to full list
+
+**How AI Helped**:
+- Recommended pattern of filtering first, then searching
+- Suggested searching in tags as well as title for better UX
+- Proposed maintaining currentFilter state for proper combined filtering
+
+---
+
+### 6. Event Delegation for Expandable Project Cards (FROM ASSIGNMENT 2, MAINTAINED)
+
+**What I Kept From Assignment 2**:
+I maintained the event delegation pattern for expandable project cards, which efficiently handles card expansion/collapse with a single listener instead of per-card listeners.
+
+**Implementation Details**:
+```javascript
+// Single event listener for ALL project cards
+const projectsSection = document.getElementById('projects');
+projectsSection.addEventListener('click', function(e) {
+    const expandBtn = e.target.closest('.project-expand-btn');
+    if (expandBtn) {
+        const card = expandBtn.closest('.project-card');
+        
+        // Close all other cards first
+        document.querySelectorAll('.project-card').forEach(otherCard => {
+            if (otherCard !== card && otherCard.classList.contains('expanded')) {
+                otherCard.classList.remove('expanded');
+            }
+        });
+        
+        // Toggle current card
+        card.classList.toggle('expanded');
+    }
+});
+```
+
+**Why Event Delegation Works Well**:
+- Single listener handles all cards (efficient)
+- Works even when cards are re-rendered for filtering
+- No need to attach/detach listeners per card
+- Better memory usage and performance
+
+**Combined with Search/Filter**:
+When project cards are re-rendered for search/filter results, the single event listener still works because it's on the parent section, not the individual cards.
+
+---
 
 **Prompt**:
 ```
@@ -199,199 +440,58 @@ Provided code for fetching from GitHub API, handling errors with try-catch, impl
 async function fetchGitHubRepos() {
     try {
         const response = await fetch('https://api.github.com/users/A1maan/repos?sort=updated&per_page=5');
-        
-        if (!response.ok) {
-            console.log('GitHub API rate limit or error, using static data');
-            return;
-        }
-        
-        const repos = await response.json();
-        
-        // Cache in localStorage
-        localStorage.setItem('githubRepos', JSON.stringify(repos));
-        localStorage.setItem('githubReposFetchTime', Date.now().toString());
-        
-    } catch (error) {
-        console.log('Could not fetch GitHub repos:', error.message);
-    }
-}
 ```
 
-**What I Added**:
-- Timestamp tracking for cache invalidation
-- Graceful fallback to static project data
-- Console logging for debugging
-- Non-blocking execution (optional enhancement)
+## Challenges Encountered and How I Solved Them
 
-**Key Takeaway**:
-Always have a backup plan when working with external APIs. User experience shouldn't depend on third-party services being available.
+### Challenge 1: GitHub API Rate Limiting
+**What Happened**: First version of fetchGitHubRepos made unlimited requests without checking rate limits.
 
----
+**How I Solved It**: 
+- AI suggested checking response.status for 403
+- I implemented specific error message for rate limit case
+- I added cache validation to prevent excessive requests
+- Tested by simulating rate limit scenarios
 
-### 6. LocalStorage Data Persistence
-
-**AI Tool Used**: GitHub Copilot
-
-**Context**: Needed to persist user preferences and form submissions.
-
-**Copilot Suggestions**:
-- Using `localStorage.setItem()` and `getItem()` for data persistence
-- Storing objects as JSON strings
-- Checking for existing data before setting defaults
-
-**Implementation Areas**:
-1. **Theme Preference**: Persisting dark/light mode choice
-2. **Form Submissions**: Storing contact form data (for demonstration)
-3. **GitHub Repos**: Caching API responses
-
-**Code Example**:
-```javascript
-// Store submission
-const submission = {
-    name: nameInput.value,
-    email: emailInput.value,
-    message: messageInput.value,
-    timestamp: new Date().toISOString()
-};
-
-const submissions = JSON.parse(localStorage.getItem('contactSubmissions') || '[]');
-submissions.push(submission);
-localStorage.setItem('contactSubmissions', JSON.stringify(submissions));
-```
+**Learning**: Understanding that some APIs have limits and planning around them is critical.
 
 ---
 
-## Benefits of AI-Assisted Development
+### Challenge 2: Hanging Requests
+**What Happened**: If GitHub API became slow, users saw loading spinner indefinitely.
 
-### Time Savings
-- **Estimated Time Saved**: 40-50% compared to manual coding
-- **Fastest Improvements**: Boilerplate code, regex patterns, CSS animations
-- **Biggest Help**: Debugging async/await issues with API calls
+**How I Solved It**:
+- AI recommended AbortController pattern
+- I researched AbortController documentation
+- Implemented 5-second timeout with proper cleanup
+- Tested with throttled network to verify timeout works
 
-### Code Quality
-- AI suggestions often followed best practices I wasn't aware of
-- Learned about performance optimizations (transform vs. position)
-- Discovered better error handling patterns
-- Got exposure to modern JavaScript features
-
-### Learning Enhancement
-- AI explanations helped me understand *why* certain approaches work better
-- Learned proper validation techniques
-- Understood state management patterns
-- Discovered accessibility considerations I had missed
+**Learning**: Timeouts are essential for user experience. Always plan for unresponsive APIs.
 
 ---
 
-## Challenges Encountered
+### Challenge 3: Stale Cache Data
+**What Happened**: Caching worked but cached data never expired.
 
-### 1. Context Limitations
-**Problem**: AI tools sometimes suggested solutions that didn't fit my specific use case or existing code structure.
+**How I Solved It**:
+- Designed timestamp-based validation
+- Set 30-minute expiration (balance between freshness and rate limit protection)
+- Implemented automatic cleanup when cache expires
+- Tested by checking localStorage at different times
 
-**Solution**: Learned to provide better context in prompts and be more specific about constraints and requirements.
-
-### 2. Consistency Issues
-**Problem**: Different AI tools sometimes gave conflicting advice on best practices.
-
-**Solution**: Cross-referenced multiple sources, checked MDN docs, and made informed decisions based on my specific needs.
-
-### 3. Expandable Project Cards
-
-**AI Tool Used**: GitHub Copilot + ChatGPT
-
-**Prompt to ChatGPT**:
-```
-How can I make project cards expandable/collapsible in vanilla JavaScript where 
-only one card can be expanded at a time? I want to avoid duplicate event listeners 
-when re-rendering cards for filtering.
-```
-
-**AI Output**:
-ChatGPT suggested using event delegation with a single listener on the parent container, which would automatically handle new cards without re-attaching listeners.
-
-**My Modifications**:
-- Implemented event delegation on the projects section (not individual cards)
-- Added logic to close all other cards before expanding the clicked one
-- Added smooth rotation animation for the expand/collapse icon
-- Fixed CSS Grid to use `align-items: start` so cards don't all stretch
-- Set a `min-height` for consistent card sizing when collapsed
-
-**What I Learned**:
-- Event delegation is more efficient than attaching listeners to each element
-- CSS Grid layout behavior and how `align-items` affects child elements
-- How to manage multiple state changes with a single click
-- The importance of preventing listener duplication when re-rendering
+**Learning**: Caching is only good if you validate freshness. Otherwise, users get old information.
 
 ---
 
-### 4. Generic Solutions
-**Problem**: AI would sometimes provide overly generic code that needed significant customization.
+### Challenge 4: Performance with Real-Time Search
+**What Happened**: Typing in search box felt sluggish because filtering happened on every keystroke.
 
-**Solution**: Used AI for the foundation but added my own creative touches and project-specific logic.
+**How I Solved It**:
+- Implemented debounce function (learned from Assignment 2)
+- Applied 300ms delay to search input
+- Reduced filter calls from 10+/second to 2-3/second
+- Felt much more responsive
 
----
-
-## Ethical Considerations
-
-### Attribution
-- All AI-generated code has been reviewed, understood, and modified
-- I can explain every line of code in this project
-- This document serves as transparent disclosure of AI usage
-
-### Learning vs. Copying
-- Used AI as a learning tool, not a replacement for understanding
-- Practiced writing code manually before asking AI for help
-- Tested multiple approaches to understand trade-offs
-
-### Academic Integrity
-- All AI usage is documented and disclosed
-- Final code reflects my understanding and customization
-- Project requirements have been met through genuine learning
-
----
-
-## Skills Developed Through AI-Assisted Development
-
-1. **JavaScript Proficiency**
-   - Async/await and promises
-   - Event handling and delegation
-   - DOM manipulation
-   - State management patterns
-
-2. **CSS Animation Skills**
-   - Keyframe animations
-   - Transition timing functions
-   - Performance optimization
-   - Responsive animation design
-
-3. **API Integration**
-   - Fetch API usage
-   - Error handling
-   - Response parsing
-   - Rate limit handling
-
-4. **User Experience**
-   - Loading states
-   - Error messages
-   - Form validation
-   - Real-time feedback
-
-5. **Data Management**
-   - LocalStorage API
-   - Data serialization
-   - State persistence
-   - Caching strategies
-
----
-
-## Conclusion
-
-AI tools significantly enhanced my development process for this assignment. They served as:
-- **Tutors**: Explaining concepts and best practices
-- **Pair programmers**: Suggesting solutions and catching errors
-- **Code reviewers**: Identifying improvements and optimizations
-
-However, the most valuable outcome wasn't just the code produced, but the learning that happened along the way. By questioning AI suggestions, modifying them to fit my needs, and understanding the underlying principles, I've grown significantly as a developer.
-
-The key to successful AI-assisted development is maintaining a balance: leverage AI for productivity while ensuring genuine understanding and adding personal creativity to every solution.
+**Learning**: Small performance optimizations can have big UX impact.
 
 ---

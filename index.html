@@ -24,6 +24,9 @@
                     <a href="#projects" class="nav-link">Projects</a>
                 </li>
                 <li class="nav-item">
+                    <a href="#github-repos" class="nav-link">GitHub</a>
+                </li>
+                <li class="nav-item">
                     <a href="#contact" class="nav-link">Contact</a>
                 </li>
                 <li class="nav-item">
@@ -68,6 +71,7 @@
             <div class="section-navigation">
                 <button class="section-nav-btn active" data-section="about">📝 About</button>
                 <button class="section-nav-btn" data-section="projects">💼 Projects</button>
+                <button class="section-nav-btn" data-section="github-repos">⚡ GitHub</button>
                 <button class="section-nav-btn" data-section="contact">✉️ Contact</button>
             </div>
             
@@ -156,6 +160,30 @@
         </div>
     </section>
 
+    <!-- GitHub Repositories Section -->
+    <section id="github-repos" class="github-repos">
+        <div class="container">
+            <h2 class="section-title">Latest GitHub Repositories</h2>
+            <p class="section-description">Check out my recent open-source projects and contributions</p>
+            
+            <!-- Loading State -->
+            <div id="github-loading" class="loading-state">
+                <div class="spinner"></div>
+                <p>Loading repositories from GitHub...</p>
+            </div>
+
+            <!-- Error State -->
+            <div id="github-error" class="error-state" style="display: none;">
+                <span class="error-icon">⚠️</span>
+                <p>Unable to fetch repositories at the moment. Please try again later.</p>
+            </div>
+
+            <div class="github-grid">
+                <!-- GitHub repos will be dynamically loaded here -->
+            </div>
+        </div>
+    </section>
+
     <!-- Contact Section -->
     <section id="contact" class="contact">
         <div class="container">
@@ -218,9 +246,24 @@
     </section>
 
     <!-- Footer -->
+        <!-- Footer -->
     <footer class="footer">
         <div class="container">
-            <p>&copy; 2025 Almaan Khan.</p>
+            <!-- Inspirational Quote -->
+            <div id="quote-loading" class="quote-loading">
+                <div class="quote-spinner"></div>
+            </div>
+            <div id="quote-error" class="quote-error" style="display: none;">
+                <p class="quote-text">"The only way to do great work is to love what you do."</p>
+                <p class="quote-author">— Steve Jobs</p>
+            </div>
+            <blockquote id="quote-display" class="quote-display" style="display: none;">
+                <p class="quote-text"></p>
+                <p class="quote-author"></p>
+            </blockquote>
+            
+            <!-- Copyright -->
+            <p class="footer-copyright">&copy; 2025 Almaan Khan.</p>
         </div>
     </footer>
 

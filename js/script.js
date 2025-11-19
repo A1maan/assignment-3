@@ -116,7 +116,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Update section nav active state on scroll
     window.addEventListener('scroll', function() {
-        const sections = ['about', 'projects', 'contact'];
+        const sections = ['about', 'projects', 'github-repos', 'contact'];
         
         sections.forEach(sectionId => {
             const section = document.getElementById(sectionId);
@@ -424,28 +424,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize projects
     loadProjects();
     
-    
-    async function fetchGitHubRepos() {
-        try {
-            const response = await fetch('https://api.github.com/users/A1maan/repos?sort=updated&per_page=5');
-            
-            if (!response.ok) {
-                console.log('GitHub API rate limit or error, using static data');
-                return;
-            }
-            
-            const repos = await response.json();
-            console.log('✓ Successfully fetched GitHub repos:', repos.length);
-            
-            // Store in localStorage for caching
-            localStorage.setItem('githubRepos', JSON.stringify(repos));
-            localStorage.setItem('githubReposFetchTime', Date.now().toString());
-            
-        } catch (error) {
-            console.log('Could not fetch GitHub repos:', error.message);
-        }
-    }
-    
     const contactForm = document.getElementById('contact-form');
     
     if (contactForm) {
@@ -681,6 +659,12 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Initialize scroll animations when page loads
     initScrollAnimations();
+    
+    // Initialize GitHub API integration
+    fetchGitHubRepos();
+    
+    // Initialize Quotes API integration
+    fetchInspirationalQuote();
 });
 
 // func just to get the current time in string format
@@ -691,4 +675,191 @@ function getCurrentTime() {
 // same thing but for date
 function getCurrentDate() {
     return new Date().toLocaleDateString();
+}
+// GitHub API Integration
+async function fetchGitHubRepos() {
+    const username = 'A1maan';
+    const loadingEl = document.getElementById('github-loading');
+    const errorEl = document.getElementById('github-error');
+    const gridEl = document.querySelector('.github-grid');
+    
+    console.log('Fetching pinned GitHub repos via berrysauce API for:', username);
+    console.log('Elements found:', { loadingEl, errorEl, gridEl });
+    
+    try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 6000);
+        const response = await fetch(`https://pinned.berrysauce.dev/get/${username}`, {
+            signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+        
+        if (!response.ok) {
+            const message = `Failed to fetch pinned repositories: ${response.status}`;
+            throw new Error(message);
+        }
+        
+        const repos = await response.json();
+        if (!Array.isArray(repos) || repos.length === 0) {
+            throw new Error('No pinned repositories found.');
+        }
+        console.log('✓ Successfully fetched pinned GitHub repos:', repos.length);
+        
+        if (loadingEl) {
+            loadingEl.style.display = 'none';
+            console.log('✓ Loading spinner hidden');
+        }
+        if (errorEl) {
+            errorEl.style.display = 'none';
+        }
+        
+        const normalizedRepos = repos.map(repo => ({
+            name: repo.name,
+            html_url: `https://github.com/${repo.author}/${repo.name}`,
+            description: repo.description || '',
+            stargazers_count: typeof repo.stars === 'number' ? repo.stars : 0,
+            forks_count: typeof repo.forks === 'number' ? repo.forks : 0,
+            language: repo.language || ''
+        }));
+        
+        localStorage.setItem('githubRepos', JSON.stringify(normalizedRepos));
+        localStorage.setItem('githubReposFetchTime', Date.now().toString());
+        
+        displayGitHubRepos(normalizedRepos);
+        console.log('✓ displayGitHubRepos() called with berrysauce pinned repos');
+        
+    } catch (error) {
+        console.error('Error fetching pinned GitHub repos:', error);
+        if (loadingEl) loadingEl.style.display = 'none';
+        if (errorEl) {
+            errorEl.style.display = 'flex';
+            const errorText = errorEl.querySelector('p');
+            if (errorText) errorText.textContent = error.message;
+        }
+    }
+}
+
+function displayGitHubRepos(repos) {
+    const gridEl = document.querySelector('.github-grid');
+    
+    console.log('Displaying repos:', repos);
+    console.log('Grid element:', gridEl);
+    
+    if (!gridEl) {
+        console.error('Grid element not found!');
+        return;
+    }
+    
+    if (!repos || repos.length === 0) {
+        gridEl.innerHTML = '<p>No repositories found.</p>';
+        return;
+    }
+    
+    // language-to-color mapping
+    const languageColors = {
+        'JavaScript': '#f1e05a',
+        'TypeScript': '#3178c6',
+        'Python': '#3572A5',
+        'HTML': '#e34c26',
+        'CSS': '#563d7c',
+        'Java': '#b07219',
+        'C++': '#f34b7d',
+        'C': '#555555',
+        'Jupyter Notebook': '#DA5B0B',
+        'Shell': '#89e051',
+        'Vue': '#41b883',
+        'React': '#61dafb'
+    };
+    
+    gridEl.innerHTML = repos.map(repo => {
+        const languageColor = repo.languageColor || languageColors[repo.language] || '#858585';
+        
+        return `
+            <a href="${repo.html_url}" target="_blank" rel="noopener noreferrer" class="repo-card">
+                <div class="repo-header">
+                    <span class="repo-icon">📁</span>
+                    <h3 class="repo-name">${repo.name}</h3>
+                </div>
+                ${repo.description ? `<p class="repo-description">${repo.description}</p>` : '<p class="repo-description" style="opacity: 0.5;">No description available</p>'}
+                <div class="repo-stats">
+                    <span class="repo-stat">
+                        <span>⭐</span>
+                        <span>${repo.stargazers_count}</span>
+                    </span>
+                    <span class="repo-stat">
+                        <span>🔀</span>
+                        <span>${repo.forks_count}</span>
+                    </span>
+                    ${repo.language ? `
+                        <span class="repo-stat">
+                            <span class="language-dot" style="background-color: ${languageColor}"></span>
+                            <span>${repo.language}</span>
+                        </span>
+                    ` : ''}
+                </div>
+            </a>
+        `;
+    }).join('');
+}
+
+// Quotes API Integration
+async function fetchInspirationalQuote() {
+    const loadingEl = document.getElementById('quote-loading');
+    const errorEl = document.getElementById('quote-error');
+    const displayEl = document.getElementById('quote-display');
+    const quoteText = displayEl.querySelector('.quote-text');
+    const quoteAuthor = displayEl.querySelector('.quote-author');
+    
+    // Programming/Coding/AI focused quotes
+    const fallbackQuotes = [
+        { content: "Code is like humor. When you have to explain it, it's bad.", author: "Cory House" },
+        { content: "First, solve the problem. Then, write the code.", author: "John Johnson" },
+        { content: "The best way to predict the future is to invent it.", author: "Alan Kay" },
+        { content: "Any fool can write code that a computer can understand. Good programmers write code that humans can understand.", author: "Martin Fowler" },
+        { content: "Experience is the name everyone gives to their mistakes.", author: "Oscar Wilde" },
+        { content: "The function of good software is to make the complex appear to be simple.", author: "Grady Booch" },
+        { content: "Programming isn't about what you know; it's about what you can figure out.", author: "Chris Pine" },
+        { content: "The most disastrous thing that you can ever learn is your first programming language.", author: "Alan Kay" },
+        { content: "In order to be irreplaceable, one must always be different.", author: "Coco Chanel" },
+        { content: "Simplicity is the soul of efficiency.", author: "Austin Freeman" },
+        { content: "Make it work, make it right, make it fast.", author: "Kent Beck" },
+        { content: "The best error message is the one that never shows up.", author: "Thomas Fuchs" },
+        { content: "Perfection is achieved not when there is nothing more to add, but when there is nothing left to take away.", author: "Antoine de Saint-Exupery" },
+        { content: "The only way to learn a new programming language is by writing programs in it.", author: "Dennis Ritchie" },
+        { content: "Artificial intelligence is the new electricity.", author: "Andrew Ng" },
+        { content: "Machine learning is the last invention that humanity will ever need to make.", author: "Nick Bostrom" },
+        { content: "Data is the new oil, but unlike oil, data is reusable.", author: "Clive Humby" },
+        { content: "AI is not going to replace humans, but humans with AI are going to replace humans without AI.", author: "Kai-Fu Lee" },
+        { content: "The goal is to turn data into information, and information into insight.", author: "Carly Fiorina" },
+        { content: "Deep learning is a superpower. With it you can make a computer see, synthesize novel art, translate languages, render a medical diagnosis, or build pieces of a car that can drive itself.", author: "Andrew Ng" }
+    ];
+    
+    try {
+        // Using Real Inspire API (free, open source, supports CORS)
+        const response = await fetch('https://api.realinspire.live/v1/quotes/random?maxLength=200');
+        
+        if (!response.ok) {
+            throw new Error('Failed to fetch quote');
+        }
+        
+        const data = await response.json();
+        
+        // Hide loading state
+        loadingEl.style.display = 'none';
+        
+        // Display quote (API returns array, get first item)
+        const quote = Array.isArray(data) ? data[0] : data;
+        quoteText.textContent = `"${quote.content}"`;
+        quoteAuthor.textContent = `— ${quote.author}`;
+        displayEl.style.display = 'block';
+        
+    } catch (error) {
+        console.error('Error fetching quote:', error);
+        // Use fallback quote
+        const randomQuote = fallbackQuotes[Math.floor(Math.random() * fallbackQuotes.length)];
+        loadingEl.style.display = 'none';
+        quoteText.textContent = `"${randomQuote.content}"`;
+        quoteAuthor.textContent = `— ${randomQuote.author}`;
+        displayEl.style.display = 'block';
+    }
 }

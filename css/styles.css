@@ -127,10 +127,43 @@ p {
 /* hero section */
 .hero {
     padding: 120px 0 80px;
-    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    background: linear-gradient(-45deg, #e0f2fe, #bfdbfe, #dbeafe, #93c5fd, #e0f2fe);
+    background-size: 600% 600%;
+    animation: gradientMove 12s ease-in-out infinite;
     min-height: 100vh;
     display: flex;
     align-items: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.hero::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.2);
+    pointer-events: none;
+}
+
+@keyframes gradientMove {
+    0% {
+        background-position: 0% 50%;
+    }
+    25% {
+        background-position: 100% 50%;
+    }
+    50% {
+        background-position: 100% 100%;
+    }
+    75% {
+        background-position: 0% 100%;
+    }
+    100% {
+        background-position: 0% 50%;
+    }
 }
 
 .hero-container {
@@ -141,6 +174,8 @@ p {
     max-width: 1200px;
     margin: 0 auto;
     padding: 0 20px;
+    position: relative;
+    z-index: 1;
 }
 
 .hero-title {
@@ -150,22 +185,26 @@ p {
     font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     font-weight: 700;
     letter-spacing: -1px;
+    text-shadow: 2px 2px 4px rgba(255, 255, 255, 0.5);
 }
 
 .highlight {
     color: #2563eb;
+    text-shadow: 2px 2px 4px rgba(255, 255, 255, 0.5);
 }
 
 .hero-subtitle {
     font-size: 1.25rem;
-    color: #64748b;
+    color: #475569;
     margin-bottom: 1.5rem;
+    text-shadow: 1px 1px 3px rgba(255, 255, 255, 0.5);
 }
 
 .hero-description {
     font-size: 1.1rem;
-    color: #475569;
+    color: #334155;
     margin-bottom: 2rem;
+    text-shadow: 1px 1px 3px rgba(255, 255, 255, 0.5);
 }
 
 .hero-buttons {
@@ -896,10 +935,32 @@ p {
 
 /* Footer */
 .footer {
-    background-color: #1e293b;
-    color: white;
-    text-align: center;
-    padding: 2rem 0;
+    background: linear-gradient(to bottom, #f8fafc, #e2e8f0);
+    padding: 60px 0 30px;
+    border-top: 1px solid #e2e8f0;
+}
+
+.footer .container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 30px;
+}
+
+.footer-copyright {
+    color: #94a3b8;
+    font-size: 0.9rem;
+    margin: 0;
+    opacity: 0.8;
+}
+
+.dark-mode .footer {
+    background: linear-gradient(to bottom, #0f172a, #1e293b);
+    border-top-color: #334155;
+}
+
+.dark-mode .footer-copyright {
+    color: #64748b;
 }
 
 /* dark mode */
@@ -925,7 +986,13 @@ p {
 }
 
 .dark-mode .hero {
-    background: linear-gradient(135deg, #1e293b 0%, #334155 100%) !important;
+    background: linear-gradient(-45deg, #020617, #0c4a6e, #082f49, #164e63, #020617) !important;
+    background-size: 600% 600% !important;
+    animation: gradientMove 12s ease-in-out infinite !important;
+}
+
+.dark-mode .hero::before {
+    background: rgba(0, 0, 0, 0.2) !important;
 }
 
 .dark-mode .hero-title {
@@ -1338,33 +1405,6 @@ h1, h2 {
     }
 }
 
-/* Parallax effect for hero section */
-.hero {
-    position: relative;
-    overflow: hidden;
-}
-
-.hero::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(135deg, rgba(59, 130, 246, 0.05), rgba(37, 99, 235, 0.05));
-    pointer-events: none;
-    animation: gradientShift 15s ease infinite;
-}
-
-@keyframes gradientShift {
-    0%, 100% {
-        transform: translateX(0);
-    }
-    50% {
-        transform: translateX(10px);
-    }
-}
-
 /* Staggered fade-in for multiple items */
 .stagger-fade-in {
     animation: fadeInUp 0.6s ease-out forwards;
@@ -1397,4 +1437,215 @@ button:hover, a:hover {
 .scroll-reveal.visible {
     opacity: 1;
     transform: translateY(0);
+}
+
+/* GitHub Repositories Section */
+.github-repos {
+    padding: 80px 0;
+    background-color: #f9fafb;
+}
+
+.dark-mode .github-repos {
+    background-color: #0f172a;
+}
+
+.github-repos .section-description {
+    text-align: center;
+    color: #64748b;
+    margin-bottom: 40px;
+    font-size: 1.1rem;
+}
+
+.dark-mode .github-repos .section-description {
+    color: #94a3b8;
+}
+
+.github-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 24px;
+    margin-top: 40px;
+}
+
+.repo-card {
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 12px;
+    padding: 24px;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    text-decoration: none;
+    color: inherit;
+    display: block;
+}
+
+.dark-mode .repo-card {
+    background: #1e293b;
+    border-color: #334155;
+}
+
+.repo-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
+    border-color: #3b82f6;
+}
+
+.dark-mode .repo-card:hover {
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.3);
+}
+
+.repo-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.repo-icon {
+    font-size: 1.5rem;
+    flex-shrink: 0;
+}
+
+.repo-name {
+    font-family: 'Poppins', sans-serif;
+    font-weight: 600;
+    font-size: 1.1rem;
+    color: #1e293b;
+    margin: 0;
+    line-height: 1.4;
+}
+
+.dark-mode .repo-name {
+    color: #f1f5f9;
+}
+
+.repo-description {
+    color: #64748b;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    margin-bottom: 16px;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.dark-mode .repo-description {
+    color: #94a3b8;
+}
+
+.repo-stats {
+    display: flex;
+    gap: 16px;
+    font-size: 0.9rem;
+    color: #64748b;
+}
+
+.dark-mode .repo-stats {
+    color: #94a3b8;
+}
+
+.repo-stat {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.repo-language {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 12px;
+    padding: 4px 12px;
+    background: #f1f5f9;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    color: #475569;
+    font-weight: 500;
+}
+
+.dark-mode .repo-language {
+    background: #334155;
+    color: #cbd5e1;
+}
+
+.language-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+/* Inspirational Quote in Footer */
+.quote-loading,
+.quote-error,
+.quote-display {
+    text-align: center;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.quote-spinner {
+    width: 24px;
+    height: 24px;
+    border: 3px solid #e2e8f0;
+    border-top-color: #3b82f6;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto;
+}
+
+.dark-mode .quote-spinner {
+    border-color: #334155;
+    border-top-color: #60a5fa;
+}
+
+.quote-display blockquote,
+.quote-error {
+    margin: 0;
+    padding: 0;
+}
+
+.quote-text {
+    font-size: 1.1rem;
+    font-style: italic;
+    color: #94a3b8;
+    margin-bottom: 8px;
+    line-height: 1.8;
+    opacity: 0.7;
+}
+
+.dark-mode .quote-text {
+    color: #64748b;
+}
+
+.quote-author {
+    font-size: 0.9rem;
+    color: #cbd5e1;
+    font-weight: 500;
+    opacity: 0.6;
+}
+
+.dark-mode .quote-author {
+    color: #475569;
+}
+
+/* Responsive adjustments for GitHub repos */
+@media (max-width: 768px) {
+    .github-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+    
+    .repo-card {
+        padding: 20px;
+    }
+    
+    .quote-text {
+        font-size: 1rem;
+    }
+    
+    .quote-author {
+        font-size: 0.85rem;
+    }
 }

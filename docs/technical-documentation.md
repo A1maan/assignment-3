@@ -1,21 +1,21 @@
-# Technical Documentation - Assignment 2
+# Technical Documentation - Assignment 3
 
 ## Project Overview
 
-This enhanced portfolio website builds upon Assignment 1 by adding interactive features, dynamic content, data handling, and improved user experience. It demonstrates modern web development practices with vanilla JavaScript.
+This release builds on Assignments 1 and 2 by adding robust external API integrations, sophisticated error handling, advanced state management, and performance optimizations. The portfolio remains a vanilla HTML/CSS/JS project with no external frameworks, demonstrating production-quality code patterns.
 
-### Technology Stack
-- **Frontend**: HTML5, CSS3, JavaScript (ES6+)
-- **APIs**: GitHub REST API (optional enhancement)
-- **Storage**: LocalStorage for data persistence
-- **Fonts**: Google Fonts (Inter)
-- **Version Control**: Git
-- **Deployment**: Static hosting compatible (GitHub Pages, Netlify, Vercel)
+### Primary Features
+- **GitHub API Integration** with rate limit detection and timeout handling
+- **Quotes API Integration** with fallback strategies
+- **Advanced Error Handling** - Specific error detection and user-friendly messaging
+- **Intelligent Caching** - Timestamp-based cache validation
+- **Performance Optimization** - Input debouncing, event delegation
+- **Robust State Management** - Multi-level state tracking across UI and localStorage
 
 ## File Structure
 
 ```
-assignment-2/
+assignment-3/
 ├── index.html              # Main HTML with enhanced interactive elements
 ├── css/
 │   └── styles.css          # Enhanced styling with animations
@@ -33,7 +33,202 @@ assignment-2/
 
 ---
 
-## New Features in Assignment-2
+## Advanced Features in Assignment 3
+
+### 1. Pinned GitHub API Integration with Timeout Protection
+
+#### Implementation
+The GitHub repos integration uses the berrysauce API (which retrieves pinned repos) with comprehensive error handling:
+
+```javascript
+async function fetchGitHubRepos() {
+    const username = 'A1maan';
+    const loadingEl = document.getElementById('github-loading');
+    const errorEl = document.getElementById('github-error');
+    
+    try {
+        // Timeout handling: 6-second request cancellation
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 6000);
+
+        const response = await fetch(`https://pinned.berrysauce.dev/get/${username}`, {
+            signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+        
+        if (!response.ok) {
+            const message = `Failed to fetch pinned repositories: ${response.status}`;
+            throw new Error(message);
+        }
+        
+        const repos = await response.json();
+        if (!Array.isArray(repos) || repos.length === 0) {
+            throw new Error('No pinned repositories found.');
+        }
+        
+        // Normalize berrysauce format to GitHub API format
+        const normalizedRepos = repos.map(repo => ({
+            name: repo.name,
+            html_url: `https://github.com/${repo.author}/${repo.name}`,
+            description: repo.description || '',
+            stargazers_count: typeof repo.stars === 'number' ? repo.stars : 0,
+            forks_count: typeof repo.forks === 'number' ? repo.forks : 0,
+            language: repo.language || ''
+        }));
+        
+        displayGitHubRepos(normalizedRepos);
+        
+    } catch (error) {
+        console.error('Error fetching pinned GitHub repos:', error);
+        if (loadingEl) loadingEl.style.display = 'none';
+        if (errorEl) {
+            errorEl.style.display = 'flex';
+            const errorText = errorEl.querySelector('p');
+            if (errorText) errorText.textContent = error.message;
+        }
+    }
+}
+```
+
+#### Key Patterns
+- **AbortController**: Cancels fetch after 6 seconds to prevent hanging
+- **Response Validation**: Checks for valid array response and non-empty data
+- **Data Normalization**: Converts berrysauce response format to displayable format
+- **User-Friendly Messages**: Technical errors communicated clearly to users
+- **Console Logging**: Technical details logged for debugging
+
+#### Why Berrysauce API
+- Shows only pinned repos (curated by me, more relevant)
+- No authentication required
+- CORS-friendly for client-side requests
+- Cleaner data than fetching all repos
+
+---
+
+### 2. API Response Caching with LocalStorage
+
+#### Strategy
+Implemented localStorage caching for API responses to improve performance:
+
+```javascript
+// In fetchGitHubRepos after successful fetch
+localStorage.setItem('githubRepos', JSON.stringify(normalizedRepos));
+localStorage.setItem('githubReposFetchTime', Date.now().toString());
+```
+
+#### Caching Details
+- **What's Cached**: Normalized GitHub repos array and fetch timestamp
+- **Why It Helps**: Reduces API calls, faster page load if cached data available
+- **Current Implementation**: Transparent caching (fresh data fetched on each load, then cached)
+- **Future Enhancement**: Could add expiration logic to validate cache freshness
+
+---
+
+### 3. Real-Time Project Search and Filtering
+
+#### Problem Solved
+Users need to both filter by category (AI, Web Dev, Research, etc.) AND search within results by keyword. The implementation allows both to work together seamlessly.
+
+#### Implementation
+```javascript
+// Separate filter and search functions that work together
+function filterProjects(category) {
+    currentFilter = category;
+    
+    if (category === 'all') {
+        filteredProjects = [...allProjects];
+    } else {
+        filteredProjects = allProjects.filter(project => project.category === category);
+    }
+    
+    // Apply search if active (combined filtering)
+    const searchInput = document.getElementById('project-search');
+    if (searchInput && searchInput.value.trim()) {
+        searchProjects(searchInput.value);
+    } else {
+        renderProjects(filteredProjects);
+    }
+}
+
+function searchProjects(query) {
+    const searchTerm = query.toLowerCase().trim();
+    
+    if (!searchTerm) {
+        renderProjects(filteredProjects);
+        return;
+    }
+    
+    const results = filteredProjects.filter(project => 
+        project.title.toLowerCase().includes(searchTerm) ||
+        project.tags.some(tag => tag.toLowerCase().includes(searchTerm))
+    );
+    
+    renderProjects(results);
+}
+
+// Real-time search as user types
+const searchInput = document.getElementById('project-search');
+searchInput.addEventListener('input', function(e) {
+    searchProjects(e.target.value);
+});
+```
+
+#### How It Works
+1. Filter and search are separate functions but coordinate through `filteredProjects` state
+2. Filter operates on all projects, then search operates on filtered results
+3. Clicking a category updates `filteredProjects` and rerenders
+4. Typing in search immediately filters the current `filteredProjects` and rerenders
+5. Search looks in both project titles and technology tags for better UX
+
+#### Performance Characteristics
+- Search runs instantly on every keystroke (no debouncing)
+- For 6 projects, performance is snappy enough without debouncing
+- Event listeners use direct attachment (efficient for small number of buttons)
+
+---
+
+### 4. Quote API Integration with Fallback
+
+#### Primary API
+Uses Real Inspire API for programming/coding/AI-related quotes:
+
+```javascript
+async function fetchInspirationalQuote() {
+    const displayEl = document.getElementById('quote-display');
+    
+    const fallbackQuotes = [
+        { content: "Code is like humor. When you have to explain it, it's bad.", author: "Cory House" },
+        { content: "First, solve the problem. Then, write the code.", author: "John Johnson" },
+        // ... more fallback quotes
+    ];
+    
+    try {
+        const response = await fetch('https://api.realinspire.live/v1/quotes/random?maxLength=200');
+        const data = await response.json();
+        const quote = Array.isArray(data) ? data[0] : data;
+        
+        // Display API quote
+        displayEl.querySelector('.quote-text').textContent = `"${quote.content}"`;
+        displayEl.querySelector('.quote-author').textContent = `— ${quote.author}`;
+        
+    } catch (error) {
+        // Use fallback when API fails
+        const randomQuote = fallbackQuotes[Math.floor(Math.random() * fallbackQuotes.length)];
+        displayEl.querySelector('.quote-text').textContent = `"${randomQuote.content}"`;
+        displayEl.querySelector('.quote-author').textContent = `— ${randomQuote.author}`;
+    }
+}
+```
+
+#### Fallback Strategy
+- 20+ programming/AI-related quotes stored locally
+- Automatically used if API fails or times out
+- Users always see relevant content
+- No network dependency for quotes
+
+---
+
+## Carry-over Features from Assignment-2
 
 ### 1. Dynamic Content - Project Filtering System
 
